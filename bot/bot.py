@@ -32,7 +32,7 @@ class CompetitiveBot(BotAI):
     async def on_step(self, iteration):
         # Populate this function with whatever your bot should do!
         if iteration == 0:
-            await self.chat_send("GLHF")
+            await self.chat_send("glhf")
         
         await self.distribute_workers()
         await self.build_supply()
@@ -41,22 +41,23 @@ class CompetitiveBot(BotAI):
         await self.build_gateway()
         await self.build_gas()
         await self.build_cybernetic()
-        await self.train_stalkers()
         if self.structures(UnitTypeId.CYBERNETICSCORE).ready:
             await self.rsrch_warpgate()
             await self.build_four_gw()
         await self.chrono_boost()
+        await self.train_stalkers()
+        await self.attack_enemy_base()
 
-        if self.time > 400:
-            print(self.time)
-            self.chat_send("GG")
-            self.leave()
+        # if self.time > 400:
+        #     print(self.time)
+        #     self.chat_send("gg")
+        #     self.leave()
     
     async def build_workers(self):
         main = self.townhalls.ready.random
         if ( self.can_afford(UnitTypeId.PROBE) and 
                 main.is_idle and 
-                self.workers.amount < self.townhalls.amount*20 ):
+                self.supply_workers < self.townhalls.amount*22 ):
             main.train(UnitTypeId.PROBE)
     
     async def build_supply(self):
@@ -64,7 +65,7 @@ class CompetitiveBot(BotAI):
                 not self.already_pending(UnitTypeId.PYLON) and 
                 self.can_afford(UnitTypeId.PYLON) ):
             if self.structures(UnitTypeId.PYLON).amount < 1:
-                await self.build(UnitTypeId.PYLON, near=list(self.main_base_ramp.upper)[0])
+                await self.build(UnitTypeId.PYLON, near=self.main_base_ramp.protoss_wall_pylon)
             if self.structures(UnitTypeId.PYLON).amount > 3:
                 await self.build(UnitTypeId.PYLON, near=self.townhalls.ready.random.position.towards(list(self.main_base_ramp.upper)[0], -10))
             else:
@@ -105,15 +106,15 @@ class CompetitiveBot(BotAI):
                 self.can_afford(UnitTypeId.GATEWAY) and
                 self.structures(UnitTypeId.GATEWAY).amount + self.structures(UnitTypeId.WARPGATE).amount < 4 ):
             pylon = self.structures(UnitTypeId.PYLON).ready.random
-            await self.build(UnitTypeId.GATEWAY, near=pylon)
+            await self.build(UnitTypeId.GATEWAY, near=pylon.position.towards(self.townhalls.ready.random, -1))
         if ( self.structures(UnitTypeId.PYLON).ready and
                 self.can_afford(UnitTypeId.GATEWAY) and
                 self.structures(UnitTypeId.GATEWAY).amount + self.structures(UnitTypeId.WARPGATE).amount < 4 ):
-            await self.build(UnitTypeId.GATEWAY, near=pylon)
+            await self.build(UnitTypeId.GATEWAY, near=pylon.position.towards(self.townhalls.ready.random, -1))
         if ( self.structures(UnitTypeId.PYLON).ready and
                 self.can_afford(UnitTypeId.GATEWAY) and
                 self.structures(UnitTypeId.GATEWAY).amount + self.structures(UnitTypeId.WARPGATE).amount < 4 ):
-            await self.build(UnitTypeId.GATEWAY, near=pylon)
+            await self.build(UnitTypeId.GATEWAY, near=pylon.position.towards(self.townhalls.ready.random, -1))
 
     async def chrono_boost(self):
         if self.structures(UnitTypeId.PYLON):
@@ -135,12 +136,12 @@ class CompetitiveBot(BotAI):
                 gateway.train(UnitTypeId.STALKER)
                 # unit.move(self.main_base_ramp.bottom_center)
     
-    async def attack(self):
+    async def attack_enemy_base(self):
         stalkers = self.units(UnitTypeId.STALKER).ready.idle
 
         for stalker in stalkers:
             if self.units(UnitTypeId.STALKER).amount > 5:
-                stalker.attack(self.enemy_start_location[0])
+                stalker.attack(self.enemy_start_locations[0])
 
 
     def on_end(self, result):
